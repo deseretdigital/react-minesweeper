@@ -7,8 +7,8 @@ var styles = {
 	},
 	cell: {
 		backgroundColor: 'gainsboro',
-		height: 20,
-		width: 20
+		height: 32,
+		width: 32
 	}
 };
 
