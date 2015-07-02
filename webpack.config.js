@@ -1,9 +1,3 @@
-var fs = require('fs');
-var fileExists = fs.existsSync;
-var path = require('path');
-var webpack = require('webpack');
-var React = require('react');
-
 module.exports = {
 
   devtool: 'eval',
