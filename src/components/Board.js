@@ -1,102 +1,42 @@
 import React from 'react';
 import Cell from './Cell';
 import styles from '../styles.js';
+import Actions from '../actions.js';
+import Store from '../store.js';
+import Reflux from 'reflux';
 
 var Board = React.createClass({
-  propTypes: {
-    height: React.PropTypes.number,
-    width: React.PropTypes.number,
-    numMines: React.PropTypes.number,
-    onGameRestart: React.PropTypes.func.isRequired
-  },
-
-  getDefaultProps() {
-    return {
-      height: 4,
-      width: 4,
-      numMines: 6,
-    }
-  },
+  mixins: [Reflux.ListenerMixin],
 
   getInitialState() {
-    return {
-      timer: 0,
-      gameGrid: this.makeGameGrid(),
-      gameOver: false,
-      gameWon: false,
-      numRemainingFlags: this.props.numMines
-    }
+    let state = Store.getInitialState();
+    state.numRemainingFlags = state.numMines;
+    return state;
   },
 
-  makeGameGrid() {
-    var grid = [];
-    for (let x = 0; x < this.props.height; ++x) {
-      grid.push([]);
-      for (let y = 0; y < this.props.width; ++y) {
-        grid[x].push({
-          hasMine: false,
-          isSwept: false,
-          mineCounts: 0,
-          isFlagged: false
-        });
-      }
-    }
-
-    this.addMines(grid);
-    this.setMineCounts(grid);
-
-    return grid;
+  componentDidMount() {
+    this.listenTo(Store, this.onStoreUpdate);
   },
 
-  setMineCounts(grid) {
-    for (let x = 0; x < grid.length; ++x) {
-      for (let y = 0; y < grid[x].length; ++y) {
-        if (grid[x][y].hasMine) {
-          let updatePositions = this.getNeighbors(x,y);
-          updatePositions.forEach((position) => {
-            grid[position[0]][position[1]].mineCounts++;
-          });
-        }
-      }
-    }
-  },
-
-  getNeighbors(x,y) {
-    let positions = [];
-
-    [1,0,-1].forEach((xMod) => {
-      [1,0,-1].forEach((yMod) => {
-        positions.push([x+xMod, y+yMod]);
-      })
-    });
-
-    return positions.filter((position) => {
-      return position[0] >= 0 && position[0] < this.props.height
-        && position[1] >= 0 && position[1] < this.props.width;
+  onStoreUpdate(newStoreState) {
+    this.setState(newStoreState, () => {
+      this.isGameOver()
     });
   },
 
-  addMines(grid) {
-    let minesToAdd = this.props.numMines;
-    let numFreeSpaces = this.props.width * this.props.height;
+  isGameOver() {
+    let gameLost = this.isGameLost();
+    let gameWon = !gameLost && this.didWeWin();
 
-    if (minesToAdd > numFreeSpaces) {
-      minesToAdd = numFreeSpaces;
+    let gameOver = false;
+    if (gameLost || gameWon) {
+      gameOver = true;
     }
 
-    while (minesToAdd) {
-      let x = this.getRandomNumber(0, this.props.width)
-      let y = this.getRandomNumber(0, this.props.height);
-
-      if (!grid[x][y].hasMine) {
-        grid[x][y].hasMine = true;
-        minesToAdd--;
-      }
-    }
-  },
-
-  getRandomNumber(min,max) {
-    return Math.floor(Math.random() * (max - min)) + min;
+    this.setState({
+      gameOver,
+      gameWon
+    });
   },
 
   handleClickLocation(x, y, e) {
@@ -108,7 +48,7 @@ var Board = React.createClass({
     if (e.shiftKey) {
       this.toggleFlag(x, y);
     } else if (!cell.isFlagged) {
-      this.sweepLocation(x, y);
+      Actions.sweepLocation(x, y);
     }
   },
 
@@ -120,20 +60,17 @@ var Board = React.createClass({
     });
   },
 
-  isGameOver(x,y) {
+  isGameLost() {
     let { gameGrid } = this.state;
 
-    let gameOver = this.state.gameOver;
-    if (gameGrid[x][y].hasMine) {
-      gameOver = true;
+    for (let x = 0; x < gameGrid.length; ++x) {
+      for (let y = 0; y < gameGrid[x].length; ++y) {
+        if (gameGrid[x][y].isSwept && gameGrid[x][y].hasMine) {
+          return true;
+        }
+      }
     }
-
-    let gameWon = this.didWeWin();
-    if (gameWon) {
-      gameOver = true;
-    }
-
-    this.setState({gameOver, gameWon});
+    return false;
   },
 
   setNumberRemainingFlags() {
@@ -146,7 +83,7 @@ var Board = React.createClass({
       }, 0);
     }, 0);
 
-    this.setState({'numRemainingFlags': this.props.numMines - flaggedSpaces});
+    this.setState({'numRemainingFlags': this.state.numMines - flaggedSpaces});
   },
 
   didWeWin() {
@@ -163,40 +100,11 @@ var Board = React.createClass({
     return sweptSpaces === totalSpaces - this.props.numMines;
   },
 
-  sweepLocation(x, y) {
-    let { gameGrid } = this.state;
-    gameGrid[x][y].isSwept = true;
-
-    if (gameGrid[x][y].mineCounts === 0) {
-      this.sweepNeighbors(x,y);
-    }
-
-    this.setState({gameGrid}, () => {
-      this.isGameOver(x,y);
-    });
-  },
-
-  sweepNeighbors(x,y) {
-    let { gameGrid } = this.state;
-    let neighbors = this.getNeighbors(x, y);
-
-    neighbors.forEach((neighbor) => {
-      let [neighborX, neighborY] = neighbor;
-      let neighborCell = gameGrid[neighborX][neighborY]
-      if (!neighborCell.hasMine
-          && neighborCell.isSwept !== true
-          && neighborCell.isFlagged !== true
-      ) {
-        this.sweepLocation(neighborX, neighborY);
-      }
-    });
-  },
-
-  renderRow(width, rowIndex) {
+  renderRow(rowIndex) {
     let gameLost = this.state.gameOver && !this.state.gameWon;
     var cols = [];
     let { gameGrid } = this.state;
-    for (let x = 0; x < width; ++x) {
+    for (let x = 0; x < gameGrid[rowIndex].length; ++x) {
       let mineCounts = gameGrid[rowIndex][x].mineCounts || '';
 
       let cellContents = mineCounts;
@@ -223,6 +131,10 @@ var Board = React.createClass({
   },
 
   render() {
+    if (this.state.gameGrid === null) {
+      return <div></div>;
+    }
+
     let gameLost = this.state.gameOver && !this.state.gameWon;
     let statusMessage = '';
 
@@ -237,17 +149,14 @@ var Board = React.createClass({
     }
 
     let rows = [];
-    for (let x = 0; x < this.props.height; ++x) {
-      rows.push(this.renderRow(
-        this.props.width,
-        x
-      ));
+    for (let x = 0; x < this.state.gameGrid.length; ++x) {
+      rows.push(this.renderRow(x));
     }
 
     let restartButton = '';
     if (this.state.gameOver) {
       restartButton = (
-        <button onClick={this.props.onGameRestart}>New Game</button>
+        <button>New Game</button>
       );
     }
 

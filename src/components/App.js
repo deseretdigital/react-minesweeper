@@ -1,31 +1,20 @@
 import React from 'react';
 import Board from './Board';
+import Reflux from 'reflux';
+import Store from '../store';
+import Actions from '../actions';
 
 var App = React.createClass({
-  getInitialState() {
-    return {
-      width: 10,
-      height: 10,
-      numMines: 1,
-      gameStarted: true
-    }
-  },
+  mixins: [Reflux.connect(Store)],
 
   startNewGame(e) {
     e.preventDefault();
 
-    this.setState({
-      width: parseInt(React.findDOMNode(this.refs.width).value),
-      height: parseInt(React.findDOMNode(this.refs.height).value),
-      numMines: parseInt(React.findDOMNode(this.refs.numMines).value),
-      gameStarted: true
-    });
-  },
+    let width = parseInt(React.findDOMNode(this.refs.width).value);
+    let height = parseInt(React.findDOMNode(this.refs.height).value);
+    let numMines = parseInt(React.findDOMNode(this.refs.numMines).value);
 
-  handleGameRestart() {
-    this.setState({
-      gameStarted: false
-    });
+    Actions.startGame(width, height, numMines);
   },
 
   render() {
@@ -63,12 +52,7 @@ var App = React.createClass({
   renderBoard() {
     return (
       <div>
-        <Board
-          width={this.state.width}
-          height={this.state.height}
-          numMines={this.state.numMines}
-          onGameRestart={this.handleGameRestart}
-        />
+        <Board />
       </div>
     );
   }
