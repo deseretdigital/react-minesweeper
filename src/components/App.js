@@ -6,7 +6,7 @@ var App = React.createClass({
     return {
       width: 10,
       height: 10,
-      numMines: 2,
+      numMines: 1,
       gameStarted: true
     }
   },
