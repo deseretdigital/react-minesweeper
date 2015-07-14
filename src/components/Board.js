@@ -1,5 +1,6 @@
 import React from 'react';
 import Cell from './Cell';
+import Scoreboard from './Scoreboard';
 import styles from '../styles.js';
 import Actions from '../actions.js';
 import Store from '../store.js';
@@ -9,9 +10,7 @@ var Board = React.createClass({
   mixins: [Reflux.ListenerMixin],
 
   getInitialState() {
-    let state = Store.getInitialState();
-    state.numRemainingFlags = state.numMines;
-    return state;
+    return Store.getInitialState();
   },
 
   componentDidMount() {
@@ -31,6 +30,7 @@ var Board = React.createClass({
     let gameOver = false;
     if (gameLost || gameWon) {
       gameOver = true;
+      Actions.stopTimer();
     }
 
     this.setState({
@@ -43,21 +43,16 @@ var Board = React.createClass({
     if (this.state.gameOver) {
       return;
     }
+    if (this.state.gameTimer === 0) {
+      Actions.startTimer();
+    }
 
     let cell = this.state.gameGrid[x][y];
     if (e.shiftKey) {
-      this.toggleFlag(x, y);
+      Actions.toggleFlag(x, y);
     } else if (!cell.isFlagged) {
       Actions.sweepLocation(x, y);
     }
-  },
-
-  toggleFlag(x, y) {
-    let { gameGrid } = this.state;
-    gameGrid[x][y].isFlagged = !gameGrid[x][y].isFlagged;
-    this.setState({gameGrid}, () => {
-      this.setNumberRemainingFlags();
-    });
   },
 
   isGameLost() {
@@ -73,19 +68,6 @@ var Board = React.createClass({
     return false;
   },
 
-  setNumberRemainingFlags() {
-    let flaggedSpaces = this.state.gameGrid.reduce((count, row) => {
-      return count + row.reduce((initCount, cell) => {
-        if (cell.isFlagged) {
-          initCount++;
-        }
-        return initCount;
-      }, 0);
-    }, 0);
-
-    this.setState({'numRemainingFlags': this.state.numMines - flaggedSpaces});
-  },
-
   didWeWin() {
     let sweptSpaces = this.state.gameGrid.reduce((count, row) => {
       return count + row.reduce((initCount, cell) => {
@@ -96,8 +78,8 @@ var Board = React.createClass({
       }, 0);
     }, 0);
 
-    let totalSpaces = this.props.width * this.props.height;
-    return sweptSpaces === totalSpaces - this.props.numMines;
+    let totalSpaces = this.state.width * this.state.height;
+    return sweptSpaces === totalSpaces - this.state.numMines;
   },
 
   renderRow(rowIndex) {
@@ -156,14 +138,14 @@ var Board = React.createClass({
     let restartButton = '';
     if (this.state.gameOver) {
       restartButton = (
-        <button>New Game</button>
+        <button onClick={Actions.restartGame}>New Game</button>
       );
     }
 
     return (
       <div>
         {statusMessage}
-        <p>Flags left: {this.state.numRemainingFlags}</p>
+        <Scoreboard />
         <table style={styles.board}>
           {rows}
         </table>

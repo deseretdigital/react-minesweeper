@@ -2,7 +2,11 @@ import Reflux from 'reflux';
 
 let actions = Reflux.createActions([
   'startGame',
-  'sweepLocation'
+  'sweepLocation',
+  'toggleFlag',
+  'restartGame',
+  'startTimer',
+  'stopTimer'
 ]);
 
 export default actions;

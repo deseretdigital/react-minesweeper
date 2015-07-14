@@ -8,6 +8,9 @@ let store = Reflux.createStore({
   height: 10,
   width: 10,
   numMines: 1,
+  numRemainingFlags: 1,
+  gameTimer: 0,
+  gameTimerId: null,
 
   getInitialState() {
     return {
@@ -15,7 +18,9 @@ let store = Reflux.createStore({
       gameStarted: this.gameStarted,
       height: this.height,
       width: this.width,
-      numMines: this.numMines
+      numMines: this.numMines,
+      numRemainingFlags: this.numMines,
+      gameTimer: this.gameTimer
     };
   },
 
@@ -25,8 +30,15 @@ let store = Reflux.createStore({
       gameStarted: this.gameStarted,
       height: this.height,
       width: this.width,
-      numMines: this.numMines
+      numMines: this.numMines,
+      numRemainingFlags: this.numRemainingFlags,
+      gameTimer: this.gameTimer
     });
+  },
+
+  onRestartGame() {
+    this.gameStarted = false;
+    this.updateState();
   },
 
   onStartGame(width, height, numMines) {
@@ -34,6 +46,7 @@ let store = Reflux.createStore({
     this.width = width;
     this.numMines = numMines;
     this.gameStarted = true;
+    this.gameTimer = 0;
 
     this.makeGameGrid();
     this.updateState();
@@ -109,6 +122,22 @@ let store = Reflux.createStore({
     return Math.floor(Math.random() * (max - min)) + min;
   },
 
+  onStartTimer() {
+    if (this.gameTimerId !== null) {
+      return;
+    }
+
+    this.gameTimerId = setInterval(() => {
+      this.gameTimer++;
+      this.updateState();
+    }, 1000);
+  },
+
+  onStopTimer() {
+    clearInterval(this.gameTimerId);
+    this.gameTimerId = null;
+  },
+
   onSweepLocation(x, y) {
     this.sweepLocation(x,y);
     this.updateState();
@@ -137,6 +166,26 @@ let store = Reflux.createStore({
         this.sweepLocation(neighborX, neighborY, false);
       }
     });
+  },
+
+  onToggleFlag(x,y) {
+    let gameGrid = this.gameGrid;
+    gameGrid[x][y].isFlagged = !gameGrid[x][y].isFlagged;
+    this.setNumberRemainingFlags();
+    this.updateState();
+  },
+
+  setNumberRemainingFlags() {
+    let flaggedSpaces = this.gameGrid.reduce((count, row) => {
+      return count + row.reduce((initCount, cell) => {
+        if (cell.isFlagged) {
+          initCount++;
+        }
+        return initCount;
+      }, 0);
+    }, 0);
+
+    this.numRemainingFlags = this.numMines - flaggedSpaces;
   },
 });
 
