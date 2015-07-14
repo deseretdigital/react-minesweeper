@@ -15,5 +15,8 @@
     "react": "^0.13.3",
     "webpack": "^1.7.3",
     "webpack-dev-server": "^1.8.0"
+  },
+  "devDependencies": {
+    "reflux": "^0.2.9"
   }
 }
