@@ -2,13 +2,18 @@ import assign from 'object-assign';
 
 var styles = {
 	board: {
+   width: 340,
+   height: 340,
 	},
 	row: {
+   display: 'flex',
+   justifyContent: 'space-between'
 	},
 	cell: {
 		backgroundColor: 'gainsboro',
-		height: 32,
-		width: 32
+    flex: '0 0 32px',
+    height: 32,
+    margin: 1,
 	}
 };
 

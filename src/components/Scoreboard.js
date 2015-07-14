@@ -8,6 +8,7 @@ var Scoreboard = React.createClass({
   render() {
     return (
       <div>
+        {this.props.children}
         <p>flags left: {this.state.numRemainingFlags}</p>
         <p>Seconds ticked: {this.state.gameTimer}</p>
       </div>

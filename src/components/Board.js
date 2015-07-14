@@ -106,9 +106,9 @@ var Board = React.createClass({
     }
 
     return (
-      <tr style={styles.row} key={'row_' + rowIndex}>
+      <section style={styles.row} key={'row_' + rowIndex}>
         {cols}
-      </tr>
+      </section>
     );
   },
 
@@ -118,15 +118,15 @@ var Board = React.createClass({
     }
 
     let gameLost = this.state.gameOver && !this.state.gameWon;
-    let statusMessage = '';
+    let statusMessage = (<span>Have fun</span>);
 
     if (gameLost) {
       statusMessage = (
-        <h1>You lost!</h1>
+        <span>You lost!</span>
       );
     } else if (this.state.gameWon) {
       statusMessage = (
-        <h1>You won!</h1>
+        <span>You won!</span>
       );
     }
 
@@ -144,11 +144,12 @@ var Board = React.createClass({
 
     return (
       <div>
-        {statusMessage}
-        <Scoreboard />
-        <table style={styles.board}>
+        <Scoreboard>
+          {statusMessage}
+        </Scoreboard>
+        <main style={styles.board}>
           {rows}
-        </table>
+        </main>
         {restartButton}
       </div>
     );

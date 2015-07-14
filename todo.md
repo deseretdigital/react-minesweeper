@@ -1,4 +1,3 @@
-add flex box
 try out radium/reactcss
 make it look pretty
 

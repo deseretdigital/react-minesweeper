@@ -28,12 +28,12 @@ var Cell = React.createClass({
     }
 
     return (
-      <td
+      <div
         style={cellStyle}
         onClick={this.props.clickHandler.bind(null)}
       >
         {content}
-      </td>
+      </div>
     );
   }
 });
