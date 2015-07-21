@@ -7,7 +7,7 @@ let store = Reflux.createStore({
   gameStarted: false,
   height: 10,
   width: 10,
-  numMines: 1,
+  numMines: 5,
   numRemainingFlags: 1,
   gameTimer: 0,
   gameTimerId: null,
@@ -53,17 +53,16 @@ let store = Reflux.createStore({
   },
 
   makeGameGrid() {
+    let numCells = this.height * this.width;
+
     var grid = [];
-    for (let x = 0; x < this.height; ++x) {
-      grid.push([]);
-      for (let y = 0; y < this.width; ++y) {
-        grid[x].push({
-          hasMine: false,
-          isSwept: false,
-          mineCounts: 0,
-          isFlagged: false
-        });
-      }
+    for (let x = 0; x < numCells; ++x) {
+      grid.push({
+        hasMine: false,
+        isSwept: false,
+        mineCounts: 0,
+        isFlagged: false
+      });
     }
 
     this.gameGrid = grid;
@@ -73,18 +72,17 @@ let store = Reflux.createStore({
 
   addMines(grid) {
     let minesToAdd = this.numMines;
-    let numFreeSpaces = this.width * this.height;
+    let numFreeSpaces = grid.length;
 
     if (minesToAdd > numFreeSpaces) {
       minesToAdd = numFreeSpaces;
     }
 
     while (minesToAdd) {
-      let x = this.getRandomNumber(0, this.width)
-      let y = this.getRandomNumber(0, this.height);
+      let index = this.getRandomNumber(0, numFreeSpaces - 1)
 
-      if (!grid[x][y].hasMine) {
-        grid[x][y].hasMine = true;
+      if (!grid[index].hasMine) {
+        grid[index].hasMine = true;
         minesToAdd--;
       }
     }
@@ -92,30 +90,32 @@ let store = Reflux.createStore({
 
   setMineCounts(grid) {
     for (let x = 0; x < grid.length; ++x) {
-      for (let y = 0; y < grid[x].length; ++y) {
-        if (grid[x][y].hasMine) {
-          let updatePositions = this.getNeighbors(x,y);
-          updatePositions.forEach((position) => {
-            grid[position[0]][position[1]].mineCounts++;
-          });
-        }
+      if (grid[x].hasMine) {
+        let updatePositions = this.getNeighbors(x);
+        updatePositions.forEach((position) => {
+          grid[position].mineCounts++;
+        });
       }
     }
   },
 
-  getNeighbors(x,y) {
+  getNeighbors(x) {
     let positions = [];
 
-    [1,0,-1].forEach((xMod) => {
+    [this.width,0,this.width * -1].forEach((xMod) => {
       [1,0,-1].forEach((yMod) => {
-        positions.push([x+xMod, y+yMod]);
+        let baseInt = Math.floor(xMod/this.width);
+        let newIndex = x + xMod + yMod;
+
+        let blah = Math.floor(newIndex/this.width);
+
+        if (newIndex >= 0 && blah == baseInt) {
+          positions.push(newIndex);
+        }
       })
     });
 
-    return positions.filter((position) => {
-      return position[0] >= 0 && position[0] < this.height
-        && position[1] >= 0 && position[1] < this.width;
-    });
+    return positions;
   },
 
   getRandomNumber(min,max) {
@@ -138,39 +138,38 @@ let store = Reflux.createStore({
     this.gameTimerId = null;
   },
 
-  onSweepLocation(x, y) {
-    this.sweepLocation(x,y);
+  onSweepLocation(x) {
+    this.sweepLocation(x);
     this.updateState();
   },
 
-  sweepLocation(x, y) {
+  sweepLocation(x) {
     let gameGrid = this.gameGrid;
-    gameGrid[x][y].isSwept = true;
+    gameGrid[x].isSwept = true;
 
-    if (gameGrid[x][y].mineCounts === 0) {
-      this.sweepNeighbors(x,y);
+    if (gameGrid[x].mineCounts === 0) {
+      this.sweepNeighbors(x);
     }
   },
 
-  sweepNeighbors(x,y) {
+  sweepNeighbors(x) {
     let gameGrid = this.gameGrid;
-    let neighbors = this.getNeighbors(x, y);
+    let neighbors = this.getNeighbors(x);
 
     neighbors.forEach((neighbor) => {
-      let [neighborX, neighborY] = neighbor;
-      let neighborCell = gameGrid[neighborX][neighborY]
+      let neighborCell = gameGrid[neighbor]
       if (!neighborCell.hasMine
           && neighborCell.isSwept !== true
           && neighborCell.isFlagged !== true
       ) {
-        this.sweepLocation(neighborX, neighborY, false);
+        this.sweepLocation(neighbor);
       }
     });
   },
 
-  onToggleFlag(x,y) {
+  onToggleFlag(x) {
     let gameGrid = this.gameGrid;
-    gameGrid[x][y].isFlagged = !gameGrid[x][y].isFlagged;
+    gameGrid[x].isFlagged = !gameGrid[x].isFlagged;
     this.setNumberRemainingFlags();
     this.updateState();
   },
