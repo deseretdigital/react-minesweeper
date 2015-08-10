@@ -39,66 +39,56 @@ var Board = React.createClass({
     });
   },
 
-  handleClickLocation(x, y, e) {
+  handleClickLocation(x, e) {
     if (this.state.gameOver) {
       return;
     }
     if (this.state.gameTimer === 0) {
       Actions.startTimer();
     }
+    let cell = this.state.gameGrid[x];
 
-    let cell = this.state.gameGrid[x][y];
     if (e.shiftKey) {
-      Actions.toggleFlag(x, y);
+      Actions.toggleFlag(x);
     } else if (!cell.isFlagged) {
-      Actions.sweepLocation(x, y);
+      Actions.sweepLocation(x);
     }
   },
 
   isGameLost() {
     let { gameGrid } = this.state;
 
-    for (let x = 0; x < gameGrid.length; ++x) {
-      for (let y = 0; y < gameGrid[x].length; ++y) {
-        if (gameGrid[x][y].isSwept && gameGrid[x][y].hasMine) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return gameGrid.some((cell) => cell.hasMine && cell.isSwept);
   },
 
   didWeWin() {
-    let sweptSpaces = this.state.gameGrid.reduce((count, row) => {
-      return count + row.reduce((initCount, cell) => {
-        if (cell.isSwept) {
-          initCount++;
-        }
-        return initCount;
-      }, 0);
-    }, 0);
-
-    let totalSpaces = this.state.width * this.state.height;
-    return sweptSpaces === totalSpaces - this.state.numMines;
+    return this.state.gameGrid.every((cell) => cell.isSwept || cell.hasMine);
   },
 
   renderRow(rowIndex) {
     let gameLost = this.state.gameOver && !this.state.gameWon;
     var cols = [];
     let { gameGrid } = this.state;
-    for (let x = 0; x < gameGrid[rowIndex].length; ++x) {
-      let mineCounts = gameGrid[rowIndex][x].mineCounts || '';
+
+    var startIndex = rowIndex * this.state.width;
+    var endIndex = startIndex + this.state.width;
+    var cells = gameGrid.slice(startIndex, endIndex);
+
+    for (var cellIndex in cells) {
+      let cell = cells[cellIndex];
+      let mineCounts = cell.mineCounts || '';
 
       let cellContents = mineCounts;
-      if (gameGrid[rowIndex][x].hasMine) {
+      if (cell.hasMine) {
         cellContents = (gameLost) ? '💥' : '🔻';
       }
+      let blah = startIndex * 1 + cellIndex *1;
       cols.push((
         <Cell
-          isSwept={this.state.gameOver || gameGrid[rowIndex][x].isSwept}
-          isFlagged={gameGrid[rowIndex][x].isFlagged}
-          clickHandler={(e) => this.handleClickLocation(rowIndex, x, e)}
-          key={'cell_' + x}
+          isSwept={this.state.gameOver || cell.isSwept}
+          isFlagged={cell.isFlagged}
+          clickHandler={(e) => this.handleClickLocation(blah,e)}
+          key={'cell_' + cellIndex}
         >
           {cellContents}
         </Cell>
@@ -131,7 +121,7 @@ var Board = React.createClass({
     }
 
     let rows = [];
-    for (let x = 0; x < this.state.gameGrid.length; ++x) {
+    for (let x = 0; x < this.state.height; ++x) {
       rows.push(this.renderRow(x));
     }
 
