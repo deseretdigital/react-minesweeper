@@ -48,7 +48,6 @@ var Board = React.createClass({
     }
     let cell = this.state.gameGrid[x];
 
-console.log(x, cell);
     if (e.shiftKey) {
       Actions.toggleFlag(x);
     } else if (!cell.isFlagged) {
@@ -59,24 +58,11 @@ console.log(x, cell);
   isGameLost() {
     let { gameGrid } = this.state;
 
-    for (let x = 0; x < gameGrid.length; ++x) {
-      if (gameGrid[x].isSwept && gameGrid[x].hasMine) {
-        return true;
-      }
-    }
-    return false;
+    return gameGrid.some((cell) => cell.hasMine && cell.isSwept);
   },
 
   didWeWin() {
-    let sweptSpaces = this.state.gameGrid.reduce((count, cell) => {
-      if (cell.isSwept) {
-        count++;
-      }
-      return count;
-    }, 0);
-
-    let totalSpaces = this.state.width * this.state.height;
-    return sweptSpaces === totalSpaces - this.state.numMines;
+    return this.state.gameGrid.every((cell) => cell.isSwept || cell.hasMine);
   },
 
   renderRow(rowIndex) {
@@ -84,7 +70,7 @@ console.log(x, cell);
     var cols = [];
     let { gameGrid } = this.state;
 
-    var startIndex = rowIndex * this.state.height;
+    var startIndex = rowIndex * this.state.width;
     var endIndex = startIndex + this.state.width;
     var cells = gameGrid.slice(startIndex, endIndex);
 

@@ -8,6 +8,7 @@ let store = Reflux.createStore({
   height: 10,
   width: 10,
   numMines: 5,
+  numCells: 100,
   numRemainingFlags: 1,
   gameTimer: 0,
   gameTimerId: null,
@@ -19,6 +20,7 @@ let store = Reflux.createStore({
       height: this.height,
       width: this.width,
       numMines: this.numMines,
+      numCells: this.numCells,
       numRemainingFlags: this.numMines,
       gameTimer: this.gameTimer
     };
@@ -47,21 +49,21 @@ let store = Reflux.createStore({
     this.numMines = numMines;
     this.gameStarted = true;
     this.gameTimer = 0;
-
+    this.numCells = width * height;
     this.makeGameGrid();
     this.updateState();
   },
 
   makeGameGrid() {
-    let numCells = this.height * this.width;
-
     var grid = [];
-    for (let x = 0; x < numCells; ++x) {
+    for (let x = 0; x < this.numCells; ++x) {
       grid.push({
+        index: x,
         hasMine: false,
         isSwept: false,
         mineCounts: 0,
-        isFlagged: false
+        isFlagged: false,
+        neighbors: this.getNeighbors(x),
       });
     }
 
@@ -91,8 +93,7 @@ let store = Reflux.createStore({
   setMineCounts(grid) {
     for (let x = 0; x < grid.length; ++x) {
       if (grid[x].hasMine) {
-        let updatePositions = this.getNeighbors(x);
-        updatePositions.forEach((position) => {
+        grid[x].neighbors.forEach((position) => {
           grid[position].mineCounts++;
         });
       }
@@ -104,17 +105,16 @@ let store = Reflux.createStore({
 
     [this.width,0,this.width * -1].forEach((xMod) => {
       [1,0,-1].forEach((yMod) => {
-        let baseInt = Math.floor(xMod/this.width);
-        let newIndex = x + xMod + yMod;
 
+        let baseInt = Math.floor((x + xMod)/this.width);
+        let newIndex = x + xMod + yMod;
         let blah = Math.floor(newIndex/this.width);
 
-        if (newIndex >= 0 && blah == baseInt) {
+        if (newIndex >= 0 && newIndex < this.numCells && blah == baseInt && x !== newIndex) {
           positions.push(newIndex);
         }
       })
     });
-
     return positions;
   },
 
@@ -154,9 +154,8 @@ let store = Reflux.createStore({
 
   sweepNeighbors(x) {
     let gameGrid = this.gameGrid;
-    let neighbors = this.getNeighbors(x);
 
-    neighbors.forEach((neighbor) => {
+    gameGrid[x].neighbors.forEach((neighbor) => {
       let neighborCell = gameGrid[neighbor]
       if (!neighborCell.hasMine
           && neighborCell.isSwept !== true
@@ -175,13 +174,11 @@ let store = Reflux.createStore({
   },
 
   setNumberRemainingFlags() {
-    let flaggedSpaces = this.gameGrid.reduce((count, row) => {
-      return count + row.reduce((initCount, cell) => {
-        if (cell.isFlagged) {
-          initCount++;
-        }
-        return initCount;
-      }, 0);
+    let flaggedSpaces = this.gameGrid.reduce((count, cell) => {
+      if (cell.isFlagged) {
+        count++;
+      }
+      return count;
     }, 0);
 
     this.numRemainingFlags = this.numMines - flaggedSpaces;
