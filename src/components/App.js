@@ -1,61 +1,105 @@
-import React from 'react';
+import React, { Component, PropTypes, findDOMNode } from 'react';
 import Board from './Board';
-import Reflux from 'reflux';
-import Store from '../store';
-import Actions from '../actions';
+import { connect } from 'react-redux';
 
-var App = React.createClass({
-  mixins: [Reflux.connect(Store)],
+import { startGame, sweepLocation, toggleFlag, clockTick, startClock, resetClock, restartGame, stopClock, updateStatus } from '../actions';
+import { GameState } from '../constants';
+const NOT_STARTED = GameState.NOT_STARTED;
+
+class App extends Component {
 
   startNewGame(e) {
     e.preventDefault();
 
-    let width = parseInt(React.findDOMNode(this.refs.width).value);
-    let height = parseInt(React.findDOMNode(this.refs.height).value);
-    let numMines = parseInt(React.findDOMNode(this.refs.numMines).value);
+    let width = parseInt(findDOMNode(this.refs.width).value);
+    let height = parseInt(findDOMNode(this.refs.height).value);
+    let numMines = parseInt(findDOMNode(this.refs.numMines).value);
 
-    Actions.startGame(width, height, numMines);
-  },
+    this.props.dispatch(startGameAndUpdateStatus(height, width, numMines));
+  }
 
   render() {
-    if (!this.state.gameStarted) {
+    if (this.props.status.gameStatus === NOT_STARTED) {
       return this.renderNewGameControls();
     } else {
       return this.renderBoard();
     }
-  },
+  }
 
   renderNewGameControls() {
+    let { board } = this.props;
     return (
       <div>
-        <form onSubmit={this.startNewGame}>
+        <form onSubmit={this.startNewGame.bind(this)}>
           <p>
             <label>
               Width:{' '}
-              <input type="number" defaultValue={this.state.width} min="1" max="20" ref="width" />
+              <input type="number" min="1" max="20" defaultValue={board.width} ref="width" />
             </label>{' '}
             <label>
               Height:{' '}
-              <input type="number" defaultValue={this.state.height} min="1" max="20" ref="height" />
+              <input type="number" min="1" max="20" defaultValue={board.height} ref="height" />
             </label>
             <label>{' '}
               Num Mines:{' '}
-              <input type="number" defaultValue={this.state.numMines} min="1" max="50" ref="numMines" />
+              <input type="number" min="1" max="50" defaultValue={board.numMines} ref="numMines" />
             </label>{' '}
             <input type="submit" value="Start" />
           </p>
         </form>
       </div>
     );
-  },
+  }
 
   renderBoard() {
+    let { dispatch } = this.props;
     return (
       <div>
-        <Board />
+        <Board {...this.props}
+          sweepLocation={ (position) => {dispatch(sweepLocationAndHandleClock(position))} }
+          toggleFlag={ (position) => dispatch(toggleFlag(position)) }
+          restartGame= { () => dispatch(restartGame()) }
+        />
       </div>
     );
   }
-});
+};
 
-export default App;
+// Which props do we want to inject, given the global state?
+// Note: use https://github.com/faassen/reselect for better performance.
+function select(state) {
+  return {
+    board: state.board,
+    clock: state.clock,
+    status: state.status,
+  };
+}
+
+function startGameAndUpdateStatus(height, width, numMines){
+  return function(dispatch, getState){
+    dispatch(startGame(height, width, numMines));
+    dispatch(updateStatus(getState().board.grid));
+  }
+}
+
+function sweepLocationAndUpdateStatus(position) {
+  return function(dispatch, getState){
+    dispatch(sweepLocation(position));
+    dispatch(updateStatus(getState().board.grid));
+  }
+}
+
+function sweepLocationAndHandleClock(position) {
+  return function (dispatch, getState) {
+      dispatch(sweepLocationAndUpdateStatus(position));
+      if(!getState().clock.id){
+        let intervalId = setInterval(() => dispatch(clockTick()), 1000);
+        dispatch(startClock(intervalId));
+      }
+      if(getState().status.gameStatus === GameState.FINISHED){
+        clearInterval(getState().clock.id);
+        dispatch(stopClock());
+      }
+  };
+}
+export default connect(select)(App);

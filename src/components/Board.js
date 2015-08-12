@@ -2,77 +2,36 @@ import React from 'react';
 import Cell from './Cell';
 import Scoreboard from './Scoreboard';
 import styles from '../styles.js';
-import Actions from '../actions.js';
-import Store from '../store.js';
-import Reflux from 'reflux';
+import {GameState, Victory} from '../constants';
 
 var Board = React.createClass({
-  mixins: [Reflux.ListenerMixin],
-
-  getInitialState() {
-    return Store.getInitialState();
-  },
-
-  componentDidMount() {
-    this.listenTo(Store, this.onStoreUpdate);
-  },
-
-  onStoreUpdate(newStoreState) {
-    this.setState(newStoreState, () => {
-      this.isGameOver()
-    });
-  },
-
-  isGameOver() {
-    let gameLost = this.isGameLost();
-    let gameWon = !gameLost && this.didWeWin();
-
-    let gameOver = false;
-    if (gameLost || gameWon) {
-      gameOver = true;
-      Actions.stopTimer();
-    }
-
-    this.setState({
-      gameOver,
-      gameWon
-    });
-  },
 
   handleClickLocation(x, e) {
-    if (this.state.gameOver) {
+    let { board, status, toggleFlag, sweepLocation } = this.props;
+    let gameOver = status.gameStatus === GameState.FINISHED;
+
+    let { grid } = board;
+    if (gameOver) {
       return;
     }
-    if (this.state.gameTimer === 0) {
-      Actions.startTimer();
-    }
-    let cell = this.state.gameGrid[x];
+    let cell = grid[x];
 
     if (e.shiftKey) {
-      Actions.toggleFlag(x);
+      toggleFlag(x);
     } else if (!cell.isFlagged) {
-      Actions.sweepLocation(x);
+      sweepLocation(x);
     }
-  },
-
-  isGameLost() {
-    let { gameGrid } = this.state;
-
-    return gameGrid.some((cell) => cell.hasMine && cell.isSwept);
-  },
-
-  didWeWin() {
-    return this.state.gameGrid.every((cell) => cell.isSwept || cell.hasMine);
   },
 
   renderRow(rowIndex) {
-    let gameLost = this.state.gameOver && !this.state.gameWon;
     var cols = [];
-    let { gameGrid } = this.state;
+    let { board, status } = this.props;
+    let { grid } = board;
 
-    var startIndex = rowIndex * this.state.width;
-    var endIndex = startIndex + this.state.width;
-    var cells = gameGrid.slice(startIndex, endIndex);
+    var startIndex = rowIndex * board.width;
+    var endIndex = startIndex + board.width;
+    var gameOver = status.gameStatus === GameState.FINISHED;
+    var cells = grid.slice(startIndex, endIndex);
 
     for (var cellIndex in cells) {
       let cell = cells[cellIndex];
@@ -80,12 +39,12 @@ var Board = React.createClass({
 
       let cellContents = mineCounts;
       if (cell.hasMine) {
-        cellContents = (gameLost) ? '💥' : '🔻';
+        cellContents = (board.gameStatus === Victory.LOST) ? '💥' : '🔻';
       }
       let blah = startIndex * 1 + cellIndex *1;
       cols.push((
         <Cell
-          isSwept={this.state.gameOver || cell.isSwept}
+          isSwept={gameOver || cell.isSwept}
           isFlagged={cell.isFlagged}
           clickHandler={(e) => this.handleClickLocation(blah,e)}
           key={'cell_' + cellIndex}
@@ -103,38 +62,40 @@ var Board = React.createClass({
   },
 
   render() {
-    if (this.state.gameGrid === null) {
+    let {board, status} = this.props;
+
+    if (board.grid === []) {
       return <div></div>;
     }
 
-    let gameLost = this.state.gameOver && !this.state.gameWon;
+    let gameLost = status.victory === Victory.LOST;
     let statusMessage = (<span>Have fun</span>);
 
     if (gameLost) {
       statusMessage = (
         <span>You lost!</span>
       );
-    } else if (this.state.gameWon) {
+    } else if (status.victory === Victory.WON) {
       statusMessage = (
         <span>You won!</span>
       );
     }
 
     let rows = [];
-    for (let x = 0; x < this.state.height; ++x) {
+    for (let x = 0; x < board.height; ++x) {
       rows.push(this.renderRow(x));
     }
 
     let restartButton = '';
-    if (this.state.gameOver) {
+    if (status.gameStatus === GameState.FINISHED) {
       restartButton = (
-        <button onClick={Actions.restartGame}>New Game</button>
+        <button onClick={this.props.restartGame}>New Game</button>
       );
     }
 
     return (
       <div>
-        <Scoreboard>
+        <Scoreboard {...this.props}>
           {statusMessage}
         </Scoreboard>
         <main style={styles.board}>
