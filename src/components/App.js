@@ -15,7 +15,7 @@ class App extends Component {
     let height = parseInt(findDOMNode(this.refs.height).value);
     let numMines = parseInt(findDOMNode(this.refs.numMines).value);
 
-    this.props.dispatch(startGameAndUpdateStatus(height, width, numMines));
+    this.props.dispatch(startGame(height, width, numMines));
   }
 
   render() {
@@ -57,7 +57,7 @@ class App extends Component {
       <div>
         <Board {...this.props}
           sweepLocation={ (position) => {dispatch(sweepLocationAndHandleClock(position))} }
-          toggleFlag={ (position) => dispatch(toggleFlagAndUpdateStatus(position)) }
+          toggleFlag={ (position) => dispatch(toggleFlagAndStartClock(position)) }
           restartGame= { () => dispatch(restartGame()) }
         />
       </div>
@@ -76,34 +76,19 @@ function select(state) {
   };
 }
 
-function startGameAndUpdateStatus(height, width, numMines){
-  return function(dispatch, getState){
-    dispatch(startGame(height, width, numMines));
-    dispatch(updateStatus(getState().grid));
-  }
-}
-
-function sweepLocationAndUpdateStatus(position) {
-  return function(dispatch, getState){
-    dispatch(sweepLocation(position));
-    dispatch(updateStatus(getState().grid));
-  }
-}
-
-function toggleFlagAndUpdateStatus(position) {
-  return function(dispatch, getState){
-    dispatch(toggleFlag(position));
-    if(!getState().clock.id){
-      let intervalId = setInterval(() => dispatch(clockTick()), 1000);
-      dispatch(startClock(intervalId));
-    }
-    dispatch(updateStatus(getState().grid));
-  }
+function toggleFlagAndStartClock(position) {
+  return function (dispatch, getState) {
+      dispatch(toggleFlag(position));
+      if(!getState().clock.id){
+        let intervalId = setInterval(() => dispatch(clockTick()), 1000);
+        dispatch(startClock(intervalId));
+      }
+  };
 }
 
 function sweepLocationAndHandleClock(position) {
   return function (dispatch, getState) {
-      dispatch(sweepLocationAndUpdateStatus(position));
+      dispatch(sweepLocation(position));
       if(!getState().clock.id){
         let intervalId = setInterval(() => dispatch(clockTick()), 1000);
         dispatch(startClock(intervalId));
@@ -114,4 +99,5 @@ function sweepLocationAndHandleClock(position) {
       }
   };
 }
+
 export default connect(select)(App);

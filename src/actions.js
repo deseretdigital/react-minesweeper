@@ -20,12 +20,12 @@ export function startGame(height, width, numMines) {
   return { type: START_GAME, height, width, numMines };
 }
 
-export function stopClock(id) {
-  return { type: STOP_CLOCK, id }
+export function stopClock() {
+  return { type: STOP_CLOCK, }
 }
 
 export function startClock(id) {
-  return { type: START_CLOCK, id};
+  return { type: START_CLOCK, id };
 }
 
 export function resetClock() {
@@ -37,15 +37,15 @@ export function clockTick() {
 }
 
 export function sweepLocation(position) {
-  return { type: SWEEP_LOCATION, position }
+  return { type: SWEEP_LOCATION, position, meta: {updateStatus: true} }
 }
 
 export function toggleFlag(position) {
-  return { type: TOGGLE_FLAG, position }
+  return { type: TOGGLE_FLAG, position, meta: {updateStatus: true} }
 }
 
-export function restartGame(position) {
-  return { type: RESTART_GAME, position }
+export function restartGame() {
+  return { type: RESTART_GAME }
 }
 
 export function updateStatus(grid) {

@@ -4,11 +4,12 @@ import { Provider } from 'react-redux';
 
 import logger from 'redux-logger';
 import thunk from 'redux-thunk';
+import {checkStatus} from './middleware';
 
 import App from './components/App';
-import * as reducers from './reducers';
+import * as reducers from './reducers/';
 
-let createStoreWithMiddleWare = applyMiddleware(thunk)(createStore);
+let createStoreWithMiddleWare = applyMiddleware(logger, checkStatus,thunk)(createStore);
 let minesweeperApp = combineReducers(reducers);
 
 let store = createStoreWithMiddleWare(minesweeperApp);

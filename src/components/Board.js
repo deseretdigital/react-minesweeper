@@ -39,7 +39,7 @@ var Board = React.createClass({
 
       let cellContents = mineCounts;
       if (cell.hasMine) {
-        cellContents = (board.gameStatus === Victory.LOST) ? '💥' : '🔻';
+        cellContents = (status.victory === Victory.LOST) ? '💥' : '🔻';
       }
       let blah = startIndex * 1 + cellIndex *1;
       cols.push((
