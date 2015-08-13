@@ -7,17 +7,18 @@ import {GameState, Victory} from '../constants';
 var Board = React.createClass({
 
   handleClickLocation(x, e) {
-    let { board, status, toggleFlag, sweepLocation } = this.props;
+    let { grid, status, toggleFlag, sweepLocation } = this.props;
     let gameOver = status.gameStatus === GameState.FINISHED;
 
-    let { grid } = board;
     if (gameOver) {
       return;
     }
     let cell = grid[x];
 
     if (e.shiftKey) {
-      toggleFlag(x);
+      if(!cell.isSwept){
+        toggleFlag(x);
+      }
     } else if (!cell.isFlagged) {
       sweepLocation(x);
     }
@@ -25,8 +26,7 @@ var Board = React.createClass({
 
   renderRow(rowIndex) {
     var cols = [];
-    let { board, status } = this.props;
-    let { grid } = board;
+    let { board, status, grid } = this.props;
 
     var startIndex = rowIndex * board.width;
     var endIndex = startIndex + board.width;

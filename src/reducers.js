@@ -1,7 +1,7 @@
 import { START_GAME, SWEEP_LOCATION, START_CLOCK, STOP_CLOCK, CLOCK_TICK,
          RESET_CLOCK, UPDATE_STATUS, TOGGLE_FLAG, RESTART_GAME } from './actions';
 
-import { setMineCounts, addMines, createGameGrid } from './utils/gameGrid';
+import { createGameGrid, sweepLocation } from './utils/gameGrid';
 
 import { GameState, Victory } from './constants';
 const { STARTED, NOT_STARTED, FINISHED } = GameState;
@@ -22,46 +22,40 @@ const initialState = {
   status: {
     gameStatus: NOT_STARTED,
     victory: UNKNOWN
-  }
+  },
+  grid: []
 };
 
 export function board(state = initialState.board, action) {
   switch (action.type) {
     case START_GAME:
-     return Object.assign({}, state, {
-       height: action.height,
-       width: action.width,
-       numMines: action.numMines,
+     return Object.assign({}, state, action, {
        numRemainingFlags: action.numMines,
-       grid: setMineCounts(addMines(createGameGrid(action.height, action.width), action.numMines))
      });
-    case SWEEP_LOCATION:
-      {
-        let newGrid = sweepLocation(state.grid, action.position);
-        return Object.assign({}, state, {
-          grid: newGrid,
-        })
-      }
-    case TOGGLE_FLAG:
-      {
-        let cell = state.grid[action.position]
-        let newCell = Object.assign( {}, cell, {
-          isFlagged: !cell.isFlagged
-        });
-        let { grid } = state;
-        let newGrid = [
-          ...grid.slice(0, action.position),
-          newCell,
-          ...grid.slice(action.position + 1)
-        ]
-        let newNumFlagsRemaining = getNumFlagsRemaining(0, {grid:newGrid});
-        return Object.assign( {}, state, {
-          grid: newGrid,
-          numRemainingFlags: newNumFlagsRemaining
-        });
-      }
+    case UPDATE_STATUS:
+      return Object.assign({}, state, {
+        numRemainingFlags: getNumFlagsRemaining(0, {grid:action.grid})
+      });
   }
   return state;
+}
+
+export function grid(state = initialState.grid, action) {
+  switch (action.type) {
+    case START_GAME:
+      return createGameGrid(action.height, action.width, action.numMines);
+    case SWEEP_LOCATION:
+      return sweepLocation(state, action.position);
+    case TOGGLE_FLAG:
+      return [
+        ...state.slice(0, action.position),
+        Object.assign( {}, state[action.position], {
+          isFlagged: !state[action.position].isFlagged
+        }),
+        ...state.slice(action.position+1)
+      ];
+   }
+ return state;
 }
 
 export function clock(state = initialState.clock, action) {
@@ -86,46 +80,17 @@ export function clock(state = initialState.clock, action) {
   return state;
 }
 
-
-function sweepLocation(grid, x) {
-  let cell = grid[x];
-  cell.isSwept = true;
-
-  let newGrid = [
-    ...grid.slice(0, x),
-    cell,
-    ...grid.slice(x+1)
-  ];
-
-    if (cell.mineCounts === 0) {
-    newGrid = sweepNeighbors(newGrid, x);
-  }
-  return newGrid;
-}
-
-function sweepNeighbors(grid, x) {
-  let newGrid = grid;
-  newGrid[x].neighbors.forEach((neighbor) => {
-    let neighborCell = newGrid[neighbor]
-    if (!neighborCell.hasMine
-        && neighborCell.isSwept !== true
-        && neighborCell.isFlagged !== true
-    ) {
-      newGrid = sweepLocation(grid, neighbor);
-    }
-  });
-  return newGrid;
-}
-
-
 export function status(state = initialState.status, action) {
-  let { grid } = action;
   switch(action.type){
     case UPDATE_STATUS:
-      if(grid.some((cell) => cell.hasMine && cell.isSwept)) {
-        return {gameStatus:FINISHED, victory:LOST};
-      } else if (grid.every((cell) => cell.isSwept || cell.hasMine)) {
-        return {gameStatus:FINISHED, victory:WON};
+      {
+        let { grid } = action;
+
+        if(grid.some((cell) => cell.hasMine && cell.isSwept)) {
+          return {gameStatus:FINISHED, victory:LOST};
+        } else if (grid.every((cell) => cell.isSwept || cell.hasMine)) {
+          return {gameStatus:FINISHED, victory:WON};
+        }
       }
     case START_GAME:
       return Object.assign({}, state, {

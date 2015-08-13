@@ -16,6 +16,8 @@
     "react": "^0.13.3",
     "react-redux": "^0.8.0",
     "redux": "^1.0.0-rc",
+    "redux-logger": "0.0.3",
+    "redux-thunk": "^0.1.0",
     "webpack": "^1.7.3",
     "webpack-dev-server": "^1.8.0"
   },

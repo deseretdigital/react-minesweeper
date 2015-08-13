@@ -33,7 +33,7 @@ export function resetClock() {
 }
 
 export function clockTick() {
-  return { type: CLOCK_TICK, meta: {delay: 1000} }
+  return { type: CLOCK_TICK }
 }
 
 export function sweepLocation(position) {

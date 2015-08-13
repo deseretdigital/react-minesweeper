@@ -1,4 +1,4 @@
-export function createGameGrid(height, width) {
+export function createGameGrid(height, width, numMines) {
   const numCells = height * width;
   const grid = [];
   for (let x = 0; x < numCells; ++x) {
@@ -11,10 +11,26 @@ export function createGameGrid(height, width) {
       neighbors: getNeighbors(x, height, width),
     });
   }
-  return grid;
+  return setMineCounts(addMines(grid, numMines));
 }
 
-export function getNeighbors(x, height, width) {
+export function sweepLocation(grid, x) {
+  let cell = grid[x];
+  cell.isSwept = true;
+
+  let newGrid = [
+    ...grid.slice(0, x),
+    cell,
+    ...grid.slice(x+1)
+  ];
+
+    if (cell.mineCounts === 0) {
+    newGrid = sweepNeighbors(newGrid, x);
+  }
+  return newGrid;
+}
+
+function getNeighbors(x, height, width) {
   const positions = [];
   const numCells = height * width;
 
@@ -33,7 +49,7 @@ export function getNeighbors(x, height, width) {
   return positions;
 }
 
-export function addMines(grid, numMines) {
+function addMines(grid, numMines) {
   let minesToAdd = numMines;
   let numFreeSpaces = grid.length;
   let newGrid = grid;
@@ -56,7 +72,7 @@ function getRandomNumber(min,max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-export function setMineCounts(grid) {
+function setMineCounts(grid) {
   let newGrid = grid;
   for (let x = 0; x < grid.length; ++x) {
     if (grid[x].hasMine) {
@@ -65,5 +81,19 @@ export function setMineCounts(grid) {
       });
     }
   }
+  return newGrid;
+}
+
+function sweepNeighbors(grid, x) {
+  let newGrid = grid;
+  newGrid[x].neighbors.forEach((neighbor) => {
+    let neighborCell = newGrid[neighbor]
+    if (!neighborCell.hasMine
+        && neighborCell.isSwept !== true
+        && neighborCell.isFlagged !== true
+    ) {
+      newGrid = sweepLocation(grid, neighbor);
+    }
+  });
   return newGrid;
 }
