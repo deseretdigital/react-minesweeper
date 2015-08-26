@@ -1,5 +1,5 @@
 import { createGameGrid, sweepLocation } from '../utils/gameGrid';
-import { START_GAME, SWEEP_LOCATION, TOGGLE_FLAG, RESTART_GAME } from '../actions';
+import { START_GAME, SWEEP_LOCATION, TOGGLE_FLAG, RESTART_GAME } from '../types';
 
 const initialState = [];
 

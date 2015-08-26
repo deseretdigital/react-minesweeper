@@ -6,13 +6,15 @@ import logger from 'redux-logger';
 import thunk from 'redux-thunk';
 import {checkStatus} from './middleware';
 
-import App from './components/App';
 import * as reducers from './reducers/';
 
-let createStoreWithMiddleWare = applyMiddleware(logger, checkStatus,thunk)(createStore);
+let createStoreWithMiddleWare = applyMiddleware(checkStatus, thunk)(createStore);
 let minesweeperApp = combineReducers(reducers);
 
 let store = createStoreWithMiddleWare(minesweeperApp);
+
+
+import App from './components/App';
 let rootElement = document.getElementById('app');
 
 React.render(

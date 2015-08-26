@@ -4,11 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --inline --content-base web"
+    "start": "webpack-dev-server --inline --content-base web",
+    "test": "mocha --compilers js:babel/register --recursive",
+    "test:watch": "npm test -- --watch"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "babel": "^5.8.21",
     "babel-core": "^5.0.9",
     "babel-loader": "^5.0.0",
     "immutable": "^3.7.4",
@@ -22,6 +25,10 @@
     "webpack-dev-server": "^1.8.0"
   },
   "devDependencies": {
+    "expect": "^1.9.0",
+    "jsdom": "^6.1.0",
+    "mocha": "^2.2.5",
+    "mocha-jsdom": "^1.0.0",
     "redux-devtools": "^0.2.0",
     "reflux": "^0.2.9"
   }

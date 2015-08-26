@@ -1,4 +1,4 @@
-import { START_GAME, UPDATE_STATUS } from '../actions';
+import { START_GAME, UPDATE_STATUS } from '../types';
 
 const initialState = {
     height: 10,
@@ -6,6 +6,7 @@ const initialState = {
     numMines: 5,
     numRemainingFlags: 5,
   };
+
 export default function board(state = initialState, action) {
   switch (action.type) {
     case START_GAME:

@@ -1,4 +1,4 @@
-import { START_GAME, UPDATE_STATUS, RESTART_GAME } from '../actions';
+import { START_GAME, UPDATE_STATUS, RESTART_GAME } from '../types';
 
 import { GameState, Victory } from '../constants';
 const { STARTED, NOT_STARTED, FINISHED } = GameState;
@@ -27,7 +27,8 @@ export default function status(state = initialState, action) {
       })
     case RESTART_GAME:
       return Object.assign({}, state, {
-        gameStatus: NOT_STARTED
+        gameStatus: NOT_STARTED,
+        victory: UNKNOWN
       })
   }
   return state;
