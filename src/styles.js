@@ -1,5 +1,3 @@
-import assign from 'object-assign';
-
 var styles = {
 	board: {
    width: 340,
@@ -17,7 +15,7 @@ var styles = {
 	}
 };
 
-styles.sweptCell = assign({}, styles.cell, {
+styles.sweptCell = Object.assign({}, styles.cell, {
   backgroundColor: 'sandybrown'
 });
 
