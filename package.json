@@ -16,7 +16,6 @@
     "babel-loader": "^5.0.0",
     "babel-plugin-object-assign": "^1.2.1",
     "immutable": "^3.7.4",
-    "object-assign": "^2.0.0",
     "react": "^0.13.3",
     "react-redux": "^0.8.0",
     "redux": "^1.0.0-rc",
