@@ -1,41 +1,39 @@
 import React from 'react';
 import styles from '../styles.js';
 
-var Cell = React.createClass({
-  propTypes: {
-    isSwept: React.PropTypes.bool,
-    isFlagged: React.PropTypes.bool,
-    children: React.PropTypes.node
-  },
+const Cell = ({isSwept, children, isFlagged, clickHandler}) => {
 
-  getDefaultProps() {
-    return {
-      isSwept: false,
-      isFlagged: false,
-    }
-  },
-
-  render() {
-    let cellStyle = (this.props.isSwept) ?
+    let cellStyle = (isSwept) ?
     styles.sweptCell :
     styles.cell;
 
     let content = '';
-    if (this.props.isSwept) {
-      content = this.props.children;
-    } else if (this.props.isFlagged) {
+    if (isSwept) {
+      content = children;
+    } else if (isFlagged) {
       content = '🇺🇸';
     }
 
     return (
       <div
         style={cellStyle}
-        onClick={this.props.clickHandler.bind(null)}
+        onClick={(e)=>{clickHandler(e)}}
       >
         {content}
       </div>
     );
-  }
-});
+
+};
+
+Cell.propTypes = {
+  isSwept: React.PropTypes.bool,
+  isFlagged: React.PropTypes.bool,
+  children: React.PropTypes.node
+};
+
+Cell.defaultProps = {
+  isSwept: false,
+  isFlagged: false
+};
 
 export default Cell;

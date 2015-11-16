@@ -1,69 +1,67 @@
-import React, { Component, PropTypes, findDOMNode } from 'react';
+import React, { Component, PropTypes } from 'react';
 import Board from './Board';
+import Scoreboard from './Scoreboard';
+import NewGameControls from './NewGameControls';
+
 import { connect } from 'react-redux';
 
-import { startGame, sweepLocation, toggleFlag, clockTick, startClock, resetClock, restartGame, stopClock, updateStatus } from '../actions';
+import { startGame, cellClicked, clockTick, startClock, restartGame, stopClock } from '../actions';
 import { GameState } from '../constants';
 const NOT_STARTED = GameState.NOT_STARTED;
 
-class App extends Component {
 
-  startNewGame(e) {
-    e.preventDefault();
-
-    let width = parseInt(findDOMNode(this.refs.width).value);
-    let height = parseInt(findDOMNode(this.refs.height).value);
-    let numMines = parseInt(findDOMNode(this.refs.numMines).value);
-
-    this.props.dispatch(startGame(height, width, numMines));
+let renderBoard = (dispatch, board, statusMessage, gameStatus, mineCharacter, clock, grid) => {
+  if(board.grid === []){
+    return (<div></div>);
   }
-
-  render() {
-    if (this.props.status.gameStatus === NOT_STARTED) {
-      return this.renderNewGameControls();
-    } else {
-      return this.renderBoard();
-    }
-  }
-
-  renderNewGameControls() {
-    let { board } = this.props;
-    return (
-      <div>
-        <form onSubmit={this.startNewGame.bind(this)}>
-          <p>
-            <label>
-              Width:{' '}
-              <input type="number" min="1" max="20" defaultValue={board.width} ref="width" />
-            </label>{' '}
-            <label>
-              Height:{' '}
-              <input type="number" min="1" max="20" defaultValue={board.height} ref="height" />
-            </label>
-            <label>{' '}
-              Num Mines:{' '}
-              <input type="number" min="1" max="50" defaultValue={board.numMines} ref="numMines" />
-            </label>{' '}
-            <input type="submit" value="Start" />
-          </p>
-        </form>
-      </div>
+  let restartButton = '';
+  let cellClickedHandler = (cell, event) => {dispatch(handleClickAndHandleClock(cell, event))};
+  if (gameStatus === GameState.FINISHED) {
+    restartButton = (
+        <button onClick={ () => dispatch(restartGame())}>New Game</button>
     );
+    cellClickedHandler = () => {};
   }
 
-  renderBoard() {
-    let { dispatch } = this.props;
+  return (
+    <div>
+      <Scoreboard numRemainingFlags={board.numRemainingFlags} elapsedTime={clock.elapsedTime}>
+        {statusMessage}
+      </Scoreboard>
+
+      <Board
+        height={board.height}
+        width={board.width}
+        grid={grid}
+        mineCharacter={mineCharacter}
+        cellClickedHandler={cellClickedHandler}
+      />
+
+      {restartButton}
+    </div>
+  );
+}
+
+
+let App = ({ dispatch, board, status: {message: statusMessage, gameStatus, mineCharacter}, clock, grid }) => {
+
+  if (gameStatus === NOT_STARTED) {
     return (
-      <div>
-        <Board {...this.props}
-          sweepLocation={ (position) => {dispatch(sweepLocationAndHandleClock(position))} }
-          toggleFlag={ (position) => dispatch(toggleFlagAndStartClock(position)) }
-          restartGame= { () => dispatch(restartGame()) }
-        />
-      </div>
-    );
+      <NewGameControls
+        height = {board.height}
+        width = {board.width}
+        numMines = {board.numMines}
+        dispatch = {dispatch}
+        startGame = {startGame}
+      />
+    )
+  } else {
+    return renderBoard(dispatch, board, statusMessage, gameStatus, mineCharacter, clock, grid);
   }
+
 };
+
+
 
 // Which props do we want to inject, given the global state?
 // Note: use https://github.com/faassen/reselect for better performance.
@@ -76,27 +74,17 @@ function select(state) {
   };
 }
 
-function toggleFlagAndStartClock(position) {
+function handleClickAndHandleClock(cell, event){
   return function (dispatch, getState) {
-      dispatch(toggleFlag(position));
-      if(!getState().clock.id){
-        let intervalId = setInterval(() => dispatch(clockTick()), 1000);
-        dispatch(startClock(intervalId));
-      }
-  };
-}
-
-function sweepLocationAndHandleClock(position) {
-  return function (dispatch, getState) {
-      dispatch(sweepLocation(position));
-      if(!getState().clock.id){
-        let intervalId = setInterval(() => dispatch(clockTick()), 1000);
-        dispatch(startClock(intervalId));
-      }
-      if(getState().status.gameStatus === GameState.FINISHED){
-        clearInterval(getState().clock.id);
-        dispatch(stopClock());
-      }
+    dispatch(cellClicked(cell, event));
+    if(!getState().clock.id){
+      let intervalId = setInterval(() => dispatch(clockTick()), 1000);
+      dispatch(startClock(intervalId));
+    }
+    if(getState().status.gameStatus === GameState.FINISHED){
+      clearInterval(getState().clock.id);
+      dispatch(stopClock());
+    }
   };
 }
 

@@ -1,5 +1,5 @@
-import { createGameGrid, sweepLocation } from '../utils/gameGrid';
-import { START_GAME, SWEEP_LOCATION, TOGGLE_FLAG, RESTART_GAME } from '../types';
+import { createGameGrid, sweepLocation, sweepAll, toggleFlag } from '../utils/gameGrid';
+import { START_GAME, CELL_CLICKED, RESTART_GAME, STOP_CLOCK} from '../types';
 
 const initialState = [];
 
@@ -7,18 +7,16 @@ export default function grid(state = initialState, action) {
   switch (action.type) {
     case START_GAME:
       return createGameGrid(action.height, action.width, action.numMines);
-    case SWEEP_LOCATION:
-      return sweepLocation(state, action.position);
-    case TOGGLE_FLAG:
-      return [
-        ...state.slice(0, action.position),
-        Object.assign( {}, state[action.position], {
-          isFlagged: !state[action.position].isFlagged
-        }),
-        ...state.slice(action.position+1)
-      ];
+    case CELL_CLICKED:
+      if(action.event.shiftKey){
+        return toggleFlag(state, action.cell.index);
+      } else {
+        return sweepLocation(state, action.cell.index);
+      }
     case RESTART_GAME:
       return [];
+    case STOP_CLOCK:
+      return sweepAll(state);
    }
  return state;
 }

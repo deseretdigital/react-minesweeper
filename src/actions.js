@@ -24,12 +24,8 @@ export function clockTick() {
   return { type: types.CLOCK_TICK }
 }
 
-export function sweepLocation(position) {
-  return { type: types.SWEEP_LOCATION, position, meta: {updateStatus: true} }
-}
-
-export function toggleFlag(position) {
-  return { type: types.TOGGLE_FLAG, position, meta: {updateStatus: true} }
+export function cellClicked(cell, event) {
+  return {type: types.CELL_CLICKED, cell, event, meta: {updateStatus: true} }
 }
 
 export function restartGame() {

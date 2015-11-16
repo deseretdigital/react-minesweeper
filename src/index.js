@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { combineReducers, createStore, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
 
@@ -17,11 +18,11 @@ let store = createStoreWithMiddleWare(minesweeperApp);
 import App from './components/App';
 let rootElement = document.getElementById('app');
 
-React.render(
+ReactDOM.render(
   // The child must be wrapped in a function
   // to work around an issue in React 0.13.
   <Provider store={store}>
-    {() => <App />}
+    <App />
   </Provider>,
   rootElement
 );

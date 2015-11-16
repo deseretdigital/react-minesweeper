@@ -17,6 +17,7 @@ export function createGameGrid(height, width, numMines) {
 export function sweepLocation(grid, x) {
   let cell = grid[x];
   cell.isSwept = true;
+  cell.isFlagged = false;
 
   let newGrid = [
     ...grid.slice(0, x),
@@ -28,6 +29,24 @@ export function sweepLocation(grid, x) {
     newGrid = sweepNeighbors(newGrid, x);
   }
   return newGrid;
+}
+
+export function sweepAll(grid) {
+  let newGrid = [];
+  for(let x = 0; x < grid.length; x++){
+    newGrid.push(Object.assign({}, grid[x], {isSwept: true}));
+  }
+  return newGrid;
+}
+
+export function toggleFlag(grid, index) {
+  return [
+    ...grid.slice(0, index),
+    Object.assign( {}, grid[index], {
+      isFlagged: !grid[index].isFlagged
+    }),
+    ...grid.slice(index+1)
+  ];
 }
 
 function getNeighbors(x, height, width) {
