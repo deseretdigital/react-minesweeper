@@ -1,61 +1,91 @@
-import React from 'react';
+import React, { Component, PropTypes } from 'react';
 import Board from './Board';
-import Reflux from 'reflux';
-import Store from '../store';
-import Actions from '../actions';
+import Scoreboard from './Scoreboard';
+import NewGameControls from './NewGameControls';
 
-var App = React.createClass({
-  mixins: [Reflux.connect(Store)],
+import { connect } from 'react-redux';
 
-  startNewGame(e) {
-    e.preventDefault();
+import { startGame, cellClicked, clockTick, startClock, restartGame, stopClock } from '../actions';
+import { GameState } from '../constants';
+const NOT_STARTED = GameState.NOT_STARTED;
 
-    let width = parseInt(React.findDOMNode(this.refs.width).value);
-    let height = parseInt(React.findDOMNode(this.refs.height).value);
-    let numMines = parseInt(React.findDOMNode(this.refs.numMines).value);
 
-    Actions.startGame(width, height, numMines);
-  },
-
-  render() {
-    if (!this.state.gameStarted) {
-      return this.renderNewGameControls();
-    } else {
-      return this.renderBoard();
-    }
-  },
-
-  renderNewGameControls() {
-    return (
-      <div>
-        <form onSubmit={this.startNewGame}>
-          <p>
-            <label>
-              Width:{' '}
-              <input type="number" defaultValue={this.state.width} min="1" max="20" ref="width" />
-            </label>{' '}
-            <label>
-              Height:{' '}
-              <input type="number" defaultValue={this.state.height} min="1" max="20" ref="height" />
-            </label>
-            <label>{' '}
-              Num Mines:{' '}
-              <input type="number" defaultValue={this.state.numMines} min="1" max="50" ref="numMines" />
-            </label>{' '}
-            <input type="submit" value="Start" />
-          </p>
-        </form>
-      </div>
-    );
-  },
-
-  renderBoard() {
-    return (
-      <div>
-        <Board />
-      </div>
-    );
+let renderBoard = (dispatch, board, statusMessage, gameStatus, mineCharacter, clock, grid) => {
+  if(board.grid === []){
+    return (<div></div>);
   }
-});
+  let restartButton = '';
+  let cellClickedHandler = (cell, event) => {dispatch(handleClickAndHandleClock(cell, event))};
+  if (gameStatus === GameState.FINISHED) {
+    restartButton = (
+        <button onClick={ () => dispatch(restartGame())}>New Game</button>
+    );
+    cellClickedHandler = () => {};
+  }
 
-export default App;
+  return (
+    <div>
+      <Scoreboard numRemainingFlags={board.numRemainingFlags} elapsedTime={clock.elapsedTime}>
+        {statusMessage}
+      </Scoreboard>
+
+      <Board
+        height={board.height}
+        width={board.width}
+        grid={grid}
+        mineCharacter={mineCharacter}
+        cellClickedHandler={cellClickedHandler}
+      />
+
+      {restartButton}
+    </div>
+  );
+}
+
+
+let App = ({ dispatch, board, status: {message: statusMessage, gameStatus, mineCharacter}, clock, grid }) => {
+
+  if (gameStatus === NOT_STARTED) {
+    return (
+      <NewGameControls
+        height = {board.height}
+        width = {board.width}
+        numMines = {board.numMines}
+        dispatch = {dispatch}
+        startGame = {startGame}
+      />
+    )
+  } else {
+    return renderBoard(dispatch, board, statusMessage, gameStatus, mineCharacter, clock, grid);
+  }
+
+};
+
+
+
+// Which props do we want to inject, given the global state?
+// Note: use https://github.com/faassen/reselect for better performance.
+function select(state) {
+  return {
+    board: state.board,
+    clock: state.clock,
+    status: state.status,
+    grid: state.grid,
+  };
+}
+
+function handleClickAndHandleClock(cell, event){
+  return function (dispatch, getState) {
+    dispatch(cellClicked(cell, event));
+    if(!getState().clock.id){
+      let intervalId = setInterval(() => dispatch(clockTick()), 1000);
+      dispatch(startClock(intervalId));
+    }
+    if(getState().status.gameStatus === GameState.FINISHED){
+      clearInterval(getState().clock.id);
+      dispatch(stopClock());
+    }
+  };
+}
+
+export default connect(select)(App);

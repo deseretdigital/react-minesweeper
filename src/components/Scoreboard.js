@@ -1,19 +1,13 @@
 import React from 'react';
-import Store from '../store.js';
-import Reflux from 'reflux';
 
-var Scoreboard = React.createClass({
-  mixins: [Reflux.connect(Store)],
-
-  render() {
-    return (
-      <div>
-        {this.props.children}
-        <p>flags left: {this.state.numRemainingFlags}</p>
-        <p>Seconds ticked: {this.state.gameTimer}</p>
-      </div>
-    );
-  }
-});
+let Scoreboard = ({numRemainingFlags, elapsedTime, children}) => {
+  return (
+    <div>
+      {children}
+      <p>flags left: {numRemainingFlags}</p>
+      <p>Seconds ticked: {elapsedTime}</p>
+    </div>
+  );
+}
 
 export default Scoreboard;
